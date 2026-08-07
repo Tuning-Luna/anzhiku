@@ -41,8 +41,12 @@
           </template>
         </el-table-column>
         <el-table-column prop="content" label="题干" min-width="260" show-overflow-tooltip />
-        <el-table-column label="答案" width="120">
-          <template #default="{ row }">{{ answerText(row.answer) }}</template>
+        <el-table-column label="答案" min-width="150">
+          <template #default="{ row }">
+            <div class="answer-cell" :title="String(answerText(row.answer))">
+              {{ answerText(row.answer) }}
+            </div>
+          </template>
         </el-table-column>
         <el-table-column label="所属题库" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">{{ row.bank?.name ?? '-' }}</template>
@@ -165,5 +169,12 @@ onMounted(async () => {
   gap: 12px;
   align-items: center;
   margin-bottom: 12px;
+}
+.answer-cell {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
 }
 </style>

@@ -15,14 +15,16 @@ jest.mock('../../src/services/llmClient.service', () => {
       { type: 'single_choice', content: '坏题', options: [{ label: 'A', content: 'a' }, { label: 'B', content: 'b' }], answer: 'D' },
     ],
   };
+  const makeResponse = () => ({
+    content: JSON.stringify(mockSample),
+    promptTokens: 100,
+    completionTokens: 40,
+    latencyMs: 200,
+  });
   return {
     uploadFile: jest.fn(async () => 'file-mock-api'),
-    parseDocument: jest.fn(async () => ({
-      content: JSON.stringify(mockSample),
-      promptTokens: 100,
-      completionTokens: 40,
-      latencyMs: 200,
-    })),
+    parseDocument: jest.fn(async () => makeResponse()),
+    parseTextChunk: jest.fn(async () => makeResponse()),
     assertConfigured: jest.fn(),
     request: jest.fn(),
   };

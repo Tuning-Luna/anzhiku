@@ -52,6 +52,8 @@ const config = {
     maxRetries: Number(env('LLM_MAX_RETRIES', 2)),
     // 流式调用下的「空闲超时」：长时间无响应数据才中断（毫秒）
     timeoutMs: Number(env('LLM_TIMEOUT_MS', 300000)),
+    // 分块提取：单块最大字符数（纯文本输入上限 9000 token；中文 1 字符≈1 token，取 7000 留余量）
+    chunkMaxChars: Number(env('LLM_CHUNK_CHARS', 7000)),
   },
 
   job: {

@@ -7,8 +7,8 @@
  */
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const TRUE_WORDS = new Set(['true', '1', '对', '正确', '√', '✓', '是', 't', 'yes']);
-const FALSE_WORDS = new Set(['false', '0', '错', '错误', '×', '✗', '否', 'f', 'no']);
+const TRUE_WORDS = ['true', '1', '对', '正确', '√', '✓', '✔', '是', 't', 'yes'];
+const FALSE_WORDS = ['false', '0', '错', '错误', '×', '✗', '✘', '否', 'f', 'no'];
 
 function labelOf(i) {
   return LETTERS[i] || `O${i + 1}`;
@@ -72,8 +72,12 @@ function normalizeMultiAnswer(raw, options) {
 function normalizeBoolean(raw) {
   if (typeof raw === 'boolean') return raw;
   const s = String(raw ?? '').trim().toLowerCase();
-  if (TRUE_WORDS.has(s)) return true;
-  if (FALSE_WORDS.has(s)) return false;
+  // 精确匹配
+  for (const w of TRUE_WORDS) if (s === w) return true;
+  for (const w of FALSE_WORDS) if (s === w) return false;
+  // 容错：答案可能带括号/说明（如 "（✔）"、"错（本题说法错误）"），按包含判断
+  for (const w of TRUE_WORDS) if (w.length >= 1 && s.includes(w)) return true;
+  for (const w of FALSE_WORDS) if (w.length >= 1 && s.includes(w)) return false;
   throw new Error(`判断题答案无法识别: ${JSON.stringify(raw)}`);
 }
 

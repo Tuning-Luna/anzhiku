@@ -16,14 +16,16 @@ jest.mock('../../src/services/llmClient.service', () => {
       { type: 'single_choice', content: '坏题', options: [{ label: 'A', content: 'a' }, { label: 'B', content: 'b' }], answer: 'D' },
     ],
   };
+  const makeResponse = () => ({
+    content: JSON.stringify(mockSample),
+    promptTokens: 200,
+    completionTokens: 80,
+    latencyMs: 300,
+  });
   return {
     uploadFile: jest.fn(async () => 'file-mock-1'),
-    parseDocument: jest.fn(async () => ({
-      content: JSON.stringify(mockSample),
-      promptTokens: 200,
-      completionTokens: 80,
-      latencyMs: 300,
-    })),
+    parseDocument: jest.fn(async () => makeResponse()),
+    parseTextChunk: jest.fn(async () => makeResponse()),
     assertConfigured: jest.fn(),
     request: jest.fn(),
   };
@@ -109,6 +111,37 @@ describe('解析管线集成测试', () => {
     expect(errs).toHaveLength(1);
     expect(errs[0].errorType).toBe('question_validation');
     expect(errs[0].rawQuestion).not.toBeNull();
+  });
+
+  test('长文本走 text_chunk 分块策略', async () => {
+    // 文件内容大于 MIN_EXTRACT_CHARS(10)，应走分块提取路径
+    const buffer = Buffer.from(
+      '这是一份较长的测试题库内容，包含多道题目，用于分块提取策略的集成测试。'
+    );
+    const saved = await fileStorage.save(buffer, {
+      originalName: '长题库.txt',
+      mimeType: 'text/plain',
+    });
+    const file = await fileService.createFileRecord({
+      originalName: '长题库.txt',
+      storedName: saved.storedName,
+      storageDir: saved.storageDir,
+      extension: saved.extension,
+      mimeType: 'text/plain',
+      sizeBytes: buffer.length,
+      sha256: 'chunk-test',
+      sourceType: 'upload',
+      sourceUrl: null,
+    });
+    const task = await models.ParseTask.create({ fileId: file.id, status: 'pending' });
+
+    await parseOrchestrator.runTask(task.id);
+
+    const updated = await models.ParseTask.findByPk(task.id);
+    expect(updated.strategy).toBe('text_chunk');
+    expect(updated.status).toBe('partial_failed');
+    expect(updated.successCount).toBe(5);
+    expect(updated.failedCount).toBe(1);
   });
 
   test('重复解析同一文件：原子替换，不产生重复题目', async () => {

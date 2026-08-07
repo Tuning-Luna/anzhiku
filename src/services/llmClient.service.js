@@ -149,13 +149,13 @@ async function readSse(body, onData) {
 }
 
 /**
- * 通过 file-id 让 qwen-doc-turbo 从文档中提取结构化内容。
- *
- * 依据官方文档，该接口的正确调用方式为流式（stream:true + stream_options）；
+ * 流式 Chat Completions 通用调用。
+ * 依据官方文档，qwen-doc-turbo 正确调用方式为流式（stream:true + stream_options）；
  * 非流式调用可能服务端挂起约 300s 后才返回（第三方实测记录），因此这里强制流式。
+ * 超时采用「空闲超时」：每收到一块数据就重置计时，长文档持续生成不会被掐断。
  * @returns {{content:string, promptTokens:number, completionTokens:number, latencyMs:number}}
  */
-async function parseDocument({ fileId, prompt }) {
+async function streamChat(messages) {
   assertConfigured();
   const started = Date.now();
   const controller = new AbortController();
@@ -176,14 +176,7 @@ async function parseDocument({ fileId, prompt }) {
       },
       body: JSON.stringify({
         model: config.llm.model,
-        messages: [
-          {
-            role: 'system',
-            content: '你是专业的题库结构化解析助手，只输出 JSON，不要输出任何其他内容。',
-          },
-          { role: 'system', content: `fileid://${fileId}` },
-          { role: 'user', content: prompt },
-        ],
+        messages,
         stream: true,
         stream_options: { include_usage: true },
       }),
@@ -227,4 +220,22 @@ async function parseDocument({ fileId, prompt }) {
   }
 }
 
-module.exports = { uploadFile, parseDocument, readSse, assertConfigured, request };
+/** 文件ID方式：system 消息携带 fileid:// 引用上传的文档 */
+async function parseDocument({ fileId, prompt }) {
+  return streamChat([
+    { role: 'system', content: '你是专业的题库结构化解析助手，只输出 JSON，不要输出任何其他内容。' },
+    { role: 'system', content: `fileid://${fileId}` },
+    { role: 'user', content: prompt },
+  ]);
+}
+
+/** 纯文本方式：system 消息直接携带文本块（分块提取用） */
+async function parseTextChunk({ text, prompt }) {
+  return streamChat([
+    { role: 'system', content: '你是专业的题库结构化解析助手，只输出 JSON，不要输出任何其他内容。' },
+    { role: 'system', content: text },
+    { role: 'user', content: prompt },
+  ]);
+}
+
+module.exports = { uploadFile, parseDocument, parseTextChunk, readSse, assertConfigured, request };

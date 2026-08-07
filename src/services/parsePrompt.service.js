@@ -41,13 +41,14 @@ JSON 结构必须是：
 - 文档没有明确分类时，根据题目内容推断最合适的一级分类；二级分类无法确定则为 null
 
 【题型规则】
-- single_choice 单选题：options 至少 2 项；answer 为单个大写字母，如 "A"
-- multi_choice 多选题：options 至少 2 项；answer 为大写字母数组，如 ["A", "B"]
+- single_choice 单选题：options 为文档中实际出现的选项；answer 为题干（ ）中标注的大写字母，如 "A"
+- multi_choice 多选题：options 为文档中实际出现的选项；answer 为大写字母数组，如 ["A", "B"]
 - true_false 判断题：不要 options；answer 为布尔值 true 或 false。判断题题干末尾常带（✔）或（✘）标记：带✔/正确/对/√→true，带✘/错误/错/×→false。若题干有（✔）（✘），直接按标记判断；若没有明确标记，根据常识判断并给最可能值
 - fill_blank 填空题：不要 options；answer 为答案字符串（一题一空）
 - short_answer 简答题：不要 options；answer 为参考答案字符串
 
 【注意】
+0. 若文档是「答案精简版」（每题题干含（ X ）答案标记，且只列出了正确选项、没有列出全部选项），则 options 只保留文档中实际出现的选项，严禁编造缺失的选项（如 B/C/D）。
 1. 每个题目必须包含 type 与 content，不得遗漏任何题目。
 2. 题干、选项、答案必须原文完整保留，不要改写、不要翻译。
 3. 无法确定的题目也要提取出来，在 answer 中给出最可能的值。`;

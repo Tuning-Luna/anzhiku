@@ -48,6 +48,34 @@ describe('questionNormalizer', () => {
     ]);
   });
 
+  test('答案精简版：单选题只有 1 个正确选项也能入库', () => {
+    const r = normalizeQuestion(
+      {
+        type: 'single_choice',
+        content: '下列有关使触电者脱离电源时的注意事项，说法错误的是（）。',
+        options: [{ label: 'A', content: '高压触电时，用干燥木棍、竹竿去拨开高压线' }],
+        answer: 'A',
+      },
+      0
+    );
+    expect(r.answer).toBe('A');
+    expect(r.options).toHaveLength(1);
+  });
+
+  test('答案精简版：多选题只有 1 个选项也能入库', () => {
+    const r = normalizeQuestion(
+      { type: 'multi_choice', content: '题', options: [{ label: 'A', content: 'a' }], answer: ['A'] },
+      0
+    );
+    expect(r.answer).toEqual(['A']);
+  });
+
+  test('单选题完全没有选项 → 抛错', () => {
+    expect(() =>
+      normalizeQuestion({ type: 'single_choice', content: '题', options: [], answer: 'A' }, 0)
+    ).toThrow(/没有可用选项/);
+  });
+
   test('单选答案不在选项 → 抛错', () => {
     expect(() =>
       normalizeQuestion(

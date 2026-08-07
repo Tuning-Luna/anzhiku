@@ -110,12 +110,14 @@ function normalizeQuestion(q, index) {
   switch (type) {
     case 'single_choice': {
       const options = normalizeOptions(q.options);
-      if (options.length < 2) throw new Error(`第 ${index + 1} 题单选题选项不足 2 个`);
+      // 允许 1 个选项：文档可能是「答案精简版」，只给出正确选项（题干带（ X ）答案标记）
+      if (options.length < 1) throw new Error(`第 ${index + 1} 题单选题没有可用选项`);
       return { type, content, options, answer: normalizeSingleAnswer(q.answer, options), analysis };
     }
     case 'multi_choice': {
       const options = normalizeOptions(q.options);
-      if (options.length < 2) throw new Error(`第 ${index + 1} 题多选题选项不足 2 个`);
+      // 同上，答案精简版可能只给出各正确选项
+      if (options.length < 1) throw new Error(`第 ${index + 1} 题多选题没有可用选项`);
       return { type, content, options, answer: normalizeMultiAnswer(q.answer, options), analysis };
     }
     case 'true_false': {
